@@ -27,11 +27,14 @@ void ofxMTCReceiver::init( string _name )
 	midiIn.listPorts();
 	
 	int foundPortID = -1;
-	for( unsigned int i = 0; i < midiIn.portNames.size(); i++ ) 
+	
+	vector<string>& midiInPorts = midiIn.getPortList();
+	
+	for( unsigned int i = 0; i < midiInPorts.size(); i++ )
 	{
 		//cout << "|" << _name << "|" << "  |" << midiIn.portNames.at(i) << "|" << endl;
 		
-		string midiPortName = trim( midiIn.portNames.at(i) );
+		string midiPortName = trim( midiInPorts.at(i) );
 		
 		if( _name == midiPortName )
 		{
@@ -64,22 +67,21 @@ void ofxMTCReceiver::init( int _port )
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 //
-void ofxMTCReceiver::newMidiMessage(ofxMidiEventArgs& eventArgs)
+void ofxMTCReceiver::newMidiMessage(ofxMidiMessage& eventArgs)
 {
 	//cout << "b1:" << eventArgs.byteOne << " b2:" << eventArgs.byteTwo << " status:" << eventArgs.status<< " port:" << eventArgs.port << " channel: "<< eventArgs.channel  << " timestamp: " << eventArgs.timestamp;
-		
-	//if( eventArgs == NULL ) return;
 	
-	ofxMidiEventArgs myEventArgs = eventArgs;
 	
-	if(myEventArgs.status == 240) {                       // if this is a MTC message...
+	ofxMidiMessage myEventArgs = eventArgs;
+	
+	if(myEventArgs.status == MIDI_TIME_CLOCK ) {                       // if this is a MTC message...
         // these static variables could be globals, or class properties etc.
         static int times[4]     = {0, 0, 0, 0};                 // this static buffer will hold our 4 time componens (frames, seconds, minutes, hours)
         //static char *szType     = "";                           // SMPTE type as string (24fps, 25fps, 30fps drop-frame, 30fps)
         static int numFrames    = 100;                          // number of frames per second (start off with arbitrary high number until we receive it)
 		
-        int messageIndex        = myEventArgs.byteOne >> 4;       // the high nibble: which quarter message is this (0...7).
-        int value               = myEventArgs.byteOne & 0x0F;     // the low nibble: value
+        int messageIndex        = myEventArgs.bytes.at(0) >> 4;       // the high nibble: which quarter message is this (0...7).
+        int value               = myEventArgs.bytes.at(0) & 0x0F;     // the low nibble: value
         int timeIndex           = messageIndex>>1;              // which time component (frames, seconds, minutes or hours) is this
         bool bNewFrame          = messageIndex % 4 == 0;
 		

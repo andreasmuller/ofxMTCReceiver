@@ -56,7 +56,7 @@ class ofxMTCReceiver : public ofxMidiListener
 		void init( int _port );
 		void init( string _name );
 	
-		void newMidiMessage(ofxMidiEventArgs& eventArgs);	
+		void newMidiMessage(ofxMidiMessage& eventArgs);	
 		
 		static int timeToMillis( int _hour, int _minutes, int _seconds, int _millis );
 		static string timeAsString( int _milliSeconds );
