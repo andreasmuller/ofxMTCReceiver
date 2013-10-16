@@ -29,6 +29,6 @@ Usage:
 	void testApp::newMTCMessage(MTCEventArgs& _args)
 	{  
 		// If you need the time as millis  
-		int currentMillis = ofxMTCReceiver::timeToMillis( _args.hours, _args.minutes, _args.seconds, _args.secondFraction * 1000 );
+		int currentMillis = _args.timeAsMillis;
 	} 
 	
