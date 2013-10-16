@@ -26,12 +26,14 @@ void ofxMTCReceiver::init( string _name )
 {
 	midiIn.listPorts();
 	
+	vector<string> midiPorts = ofxMidiIn::getPortList();
+	
 	int foundPortID = -1;
-	for( unsigned int i = 0; i < midiIn.portNames.size(); i++ ) 
+	for( unsigned int i = 0; i < midiPorts.size(); i++ )
 	{
 		//cout << "|" << _name << "|" << "  |" << midiIn.portNames.at(i) << "|" << endl;
 		
-		string midiPortName = trim( midiIn.portNames.at(i) );
+		string midiPortName = trim( midiPorts.at(i) );
 		
 		if( _name == midiPortName )
 		{
@@ -51,35 +53,44 @@ void ofxMTCReceiver::init( string _name )
 
 }
 
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 //
 void ofxMTCReceiver::init( int _port )
 {
 	
-	midiIn.openPort(_port);	
+	midiIn.openPort(_port);
+	
+	// don't ignore sysex, timing, & active sense messages,
+	// these are ignored by default
+	midiIn.ignoreTypes(false, false, false);
+	
+	// add testApp as a listener
 	midiIn.addListener(this);
-	midiIn.setVerbose( false );	
+	
+	// print received messages to the console
+	midiIn.setVerbose( false );
 }
 
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 //
-void ofxMTCReceiver::newMidiMessage(ofxMidiEventArgs& eventArgs)
+void ofxMTCReceiver::newMidiMessage( ofxMidiMessage& _message )
 {
-	//cout << "b1:" << eventArgs.byteOne << " b2:" << eventArgs.byteTwo << " status:" << eventArgs.status<< " port:" << eventArgs.port << " channel: "<< eventArgs.channel  << " timestamp: " << eventArgs.timestamp;
+	
+	ofxMidiMessage midiMessage = _message;
+	
+	if( midiMessage.status == MIDI_TIME_CODE &&		// if this is a MTC message...
+	    midiMessage.bytes.size() > 1  )
+	{
 		
-	//if( eventArgs == NULL ) return;
-	
-	ofxMidiEventArgs myEventArgs = eventArgs;
-	
-	if(myEventArgs.status == 240) {                       // if this is a MTC message...
         // these static variables could be globals, or class properties etc.
         static int times[4]     = {0, 0, 0, 0};                 // this static buffer will hold our 4 time componens (frames, seconds, minutes, hours)
         //static char *szType     = "";                           // SMPTE type as string (24fps, 25fps, 30fps drop-frame, 30fps)
         static int numFrames    = 100;                          // number of frames per second (start off with arbitrary high number until we receive it)
 		
-        int messageIndex        = myEventArgs.byteOne >> 4;       // the high nibble: which quarter message is this (0...7).
-        int value               = myEventArgs.byteOne & 0x0F;     // the low nibble: value
+        int messageIndex        = midiMessage.bytes.at(1) >> 4;       // the high nibble: which quarter message is this (0...7).
+        int value               = midiMessage.bytes.at(1) & 0x0F;     // the low nibble: value
         int timeIndex           = messageIndex>>1;              // which time component (frames, seconds, minutes or hours) is this
         bool bNewFrame          = messageIndex % 4 == 0;
 		
@@ -109,12 +120,18 @@ void ofxMTCReceiver::newMidiMessage(ofxMidiEventArgs& eventArgs)
 			
 			timcodeEventArgs.secondFraction = (float)timcodeEventArgs.frames / (float)timcodeEventArgs.numFrames;
 			
+			timcodeEventArgs.timeAsMillis = timeToMillis( timcodeEventArgs );
 				
 			ofNotifyEvent( MTCEvent, timcodeEventArgs, this );
 			
             //sprintf( reportString, "%i:%i:%i:%i | %s\n", times[3], times[2], times[1], times[0], szType );			
         }           
 		
+		if( timeIndex < 0 || timeIndex > 3 )
+		{
+			ofLogError() << "ofxMTCReceiver::newMidiMessage,  timeIndex should not be able to reach " << timeIndex;
+			timeIndex %= 3;
+		}
 		
         if(messageIndex % 2 == 0) {                             // if this is lower nibble of time component
             times[timeIndex]    = value;
@@ -139,7 +156,14 @@ void ofxMTCReceiver::newMidiMessage(ofxMidiEventArgs& eventArgs)
     }			
 }
 
-	
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------------
+//
+int ofxMTCReceiver::timeToMillis( MTCEventArgs _args )
+{
+	return timeToMillis( _args.hours, _args.minutes, _args.seconds, _args.secondFraction * 1000 );
+}
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 //
 int ofxMTCReceiver::timeToMillis( int _hour, int _minutes, int _seconds, int _millis )

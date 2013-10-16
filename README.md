@@ -26,9 +26,9 @@ Usage:
 	ofAddListener( MTCReceiver.MTCEvent, this, &testApp::newMTCMessage  );  
 
 
-	void testApp::newMTCMessage(MTCEventArgs& MTCEventArgs)  
+	void testApp::newMTCMessage(MTCEventArgs& _args)
 	{  
 		// If you need the time as millis  
-		int currentMillis = ofxMTCReceiver::timeToMillis( MTCEventArgs.hours, MTCEventArgs.minutes, MTCEventArgs.seconds, MTCEventArgs.secondFraction * 1000 );	  
+		int currentMillis = ofxMTCReceiver::timeToMillis( _args.hours, _args.minutes, _args.seconds, _args.secondFraction * 1000 );
 	} 
 	

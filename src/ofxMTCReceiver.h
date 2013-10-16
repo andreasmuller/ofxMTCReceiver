@@ -32,6 +32,8 @@ public:
 		secondFraction  = 0.0f;
 		
 		numFrames		= 25;
+		
+		timeAsMillis 	= 0;
 	}
 	
 	int hours;
@@ -41,6 +43,8 @@ public:
 	float secondFraction;
 	
 	int numFrames;
+	
+	int timeAsMillis;
 };
 
 
@@ -56,8 +60,9 @@ class ofxMTCReceiver : public ofxMidiListener
 		void init( int _port );
 		void init( string _name );
 	
-		void newMidiMessage(ofxMidiEventArgs& eventArgs);	
-		
+		void newMidiMessage(ofxMidiMessage& eventArgs);
+
+		static int timeToMillis( MTCEventArgs _args );
 		static int timeToMillis( int _hour, int _minutes, int _seconds, int _millis );
 		static string timeAsString( int _milliSeconds );
 	
@@ -67,7 +72,10 @@ class ofxMTCReceiver : public ofxMidiListener
 		MTCEventArgs			timcodeEventArgs;
 	
 	
+	protected:
 	
+
+
 		// trim from both ends
 		static inline std::string &trim(std::string &s)  {
 			return ltrim(rtrim(s));
@@ -82,8 +90,8 @@ class ofxMTCReceiver : public ofxMidiListener
 		// trim from end
 		static inline std::string &rtrim(std::string &s)  {
 			s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-			return s; 
+			return s;
 		}
 	
-		//char					reportString[512];
+	
 };
